@@ -68,21 +68,37 @@ class MotionDetector:
         Detection motion between two frames using contours.
         Returns a boolean indicating if the difference exceeds the motion threshold
         """
+        # if old_frame_greyscale is None:
+        #     return False
+        # # Calculate background subtraction
+        # frame_delta = cv2.absdiff(old_frame_greyscale, new_frame_greyscale)
+        # # Calculate and dilate threshold
+        # threshold = cv2.threshold(frame_delta, 25, 255, cv2.THRESH_BINARY)[1]
+        # threshold = cv2.dilate(threshold, None, iterations=2)
+        # # Extract contours from the threshold image
+        # contours = cv2.findContours(threshold.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # contours = imutils.grab_contours(contours)
+        # # Iterate over contours and determine if any are large enough to count as motion
+        # for contour in contours:
+        #     if cv2.contourArea(contour) >= self.motion_threshold:
+        #         return True
+        # return False
+        """
+        New Code For Motion Detection
+        """
         if old_frame_greyscale is None:
             return False
-        # Calculate background subtraction
-        frame_delta = cv2.absdiff(old_frame_greyscale, new_frame_greyscale)
-        # Calculate and dilate threshold
-        threshold = cv2.threshold(frame_delta, 25, 255, cv2.THRESH_BINARY)[1]
-        threshold = cv2.dilate(threshold, None, iterations=2)
-        # Extract contours from the threshold image
-        contours = cv2.findContours(threshold.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours = imutils.grab_contours(contours)
-        # Iterate over contours and determine if any are large enough to count as motion
-        for contour in contours:
-            if cv2.contourArea(contour) >= self.motion_threshold:
-                return True
-        return False
+        delta_frame = cv2.absdiff(old_frame_greyscale, new_frame_greyscale)
+        thresh_frame = cv2.threshold(delta_frame, 30, 255, cv2.THRESH_BINARY)[1]
+        thresh_frame = cv2.dilate(thresh_frame, None, iterations=2)
+
+        (_, cnts, _) = cv2.findContours(thresh_frame.copy(),
+                                    cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        for contour in cnts:
+            if cv2.contourArea(contour) < self.motion_threshold:
+                return False
+            return True
 
     def _draw_motion_areas_on_frame(self, old_frame, new_frame):
         if old_frame is None:
